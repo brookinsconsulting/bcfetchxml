@@ -20,7 +20,9 @@ class BCFetchXmlOperator
 {
     var $Debug = false;
     var $Cache = true;
+
     var $DefaultMethod = 'parseSTDLXML';
+    // var $DefaultMethod = 'parseWEBSVNXML';
 
     /*!
       Constructor, does nothing by default.
@@ -94,6 +96,8 @@ class BCFetchXmlOperator
             {
 		if( $defaultMethod == 'parseSTDLXML' ) {
 			$operatorValue = $this->$operatorMethodNameValue($firstParam, $secondParam, $thirdParam);
+		} elseif( $defaultMethod == 'parseWEBSVNXML' ) {
+			$operatorValue = $this->$operatorMethodNameValue($firstParam, $secondParam, $thirdParam);
 		} else {
 			$operatorValue = $this->parseXML($firstParam, $secondParam, $thirdParam);
 		}
@@ -132,6 +136,37 @@ class BCFetchXmlOperator
     // Parse the XML into event objects using PHP's SimpleXML library
     function parseSTDLXML( $url, $cache = true, $debug = false )
     {
+        $this->Debug = $debug;
+        $xmlEvents = false;
+        if( $this->Cache == true && $cache == true )
+        {
+            if ( $this->Debug == true )
+                eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", Caching Enabled." . print_r( false , TRUE) );
+
+            $xmlEvents = $this->cachedRemoteXMLCall( $url, $cache );
+        } else {
+            $xmlEvents = $this->remoteXMLCall( $url );
+        }
+        foreach($xmlEvents as $xmlEvent) {
+            foreach($xmlEvent as $key => $value) {
+                $key = (string)$key;
+                $value = (string)$value;
+                $event[$key] = $value;
+                // echo "Key: " . $key . " Value: " . $value . "<br />\n";
+             }
+             // var_dump( $event );
+             $events[] = $event;
+         }
+        if ( $this->Debug == true )
+            eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results count: " . print_r( count( $events ), TRUE) );
+            // eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results: " . print_r( $events, TRUE) );
+            // var_dump( $events );
+         return $events;
+    }
+
+    // Parse the XML into event objects using PHP's SimpleXML library
+    function parseWEBSVNXML( $url, $cache = true, $debug = false )
+    {
 	$this->Debug = $debug;
 	$xmlEvents = false;
 	if( $this->Cache == true && $cache == true )
@@ -145,18 +180,46 @@ class BCFetchXmlOperator
         }
         foreach($xmlEvents as $xmlEvent) {
 	    foreach($xmlEvent as $key => $value) {
+	        
 	 	$key = (string)$key;
-		$value = (string)$value;
-		$event[$key] = $value;
+		// $value = (string)$value;
+
+		if ( $key != 'item' ) {
+			$event[$key] = (string)$value;
+		} else {
+		        if( isset( $event[$key] ) && is_array( $event[$key] ) ) {
+  			    // array_push( $event[$key], $value );
+			    foreach( $value as $in => $out) {
+			       $subkey = (string)$in;
+			       $subvalue = (string)$out[0];
+			       // var_dump( $value);
+			       $subitem[$subkey] = $subvalue;
+			    }
+  			    array_push( $event[$key], $subitem );
+			} else {
+			    $event[$key] = array();
+			    $subitem=array();
+			    foreach( $value as $in => $out) {
+			       $subkey = (string)$in;
+			       $subvalue = (string)$out[0];
+			       // var_dump( $value);
+			       $subitem[$subkey] = $subvalue;
+			    }
+  			    array_push( $event[$key], $subitem );
+			}
+		}
 		// echo "Key: " . $key . " Value: " . $value . "<br />\n";
 	     }
 	     // var_dump( $event );
  	     $events[] = $event;
          }
- 	if ( $this->Debug == true )
-	    eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results count: " . print_r( count( $events ), TRUE) );
-	    // eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results: " . print_r( $events, TRUE) );
-            // var_dump( $events );
+ 	if ( $this->Debug == true ) {
+	    eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results count: " . print_r( count( $events[0]['item'] ), TRUE) );
+	    // eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results: " . print_r( $subitem, TRUE) );
+	    eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results: " . print_r( $events, TRUE) );
+	    // eZDebug::writeDebug( "bcfetchxml: ".$this->DefaultMethod.", remote url call results: " . print_r( $xmlEvents, TRUE) );
+	}
+         // var_dump( $events );
          return $events;
     }
 
