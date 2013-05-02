@@ -231,8 +231,10 @@ class BCFetchXmlOperator
     {
 	$this->Debug = $debug;
 	$xmlEvents = false;
+
 	$event = false; // $event = array();
         $events = false;
+
 	if( $this->Cache == true && $cache == true )
         {
 	    if ( $this->Debug == true )
