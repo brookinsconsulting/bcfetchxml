@@ -231,8 +231,8 @@ class BCFetchXmlOperator
     {
 	$this->Debug = $debug;
 	$xmlEvents = false;
-	// $event = array();
-
+	$event = false; // $event = array();
+        $events = false;
 	if( $this->Cache == true && $cache == true )
         {
 	    if ( $this->Debug == true )
@@ -358,7 +358,7 @@ class BCFetchXmlOperator
 	{
             $feedName=str_replace('&', '_',  $url );
 	    $events = array();
-	    $event = array();
+            $event = array();
 
 	    // Load with cache
 	    $cacheDir = eZSys::cacheDirectory();
